@@ -4,12 +4,11 @@
 #define NUM_LEDS 60 //number of LEDs
 #define DATA_PIN 6 //Arduino pin for data line
 #define BRIGHTNESS 96 //brightness
-#define FRAMES_PER_SECOND 120 //frames per second
 #define SECONDS_PER_PATTERN 10 //number of seconds before changing pattern
 CRGB leds[NUM_LEDS]; //create LED array
 CRGB ledPurple = CRGB::Indigo; //assign purple LED color
 CRGB ledGold = CRGB::Yellow; //assign gold LED color
-CRGBPalette256 crossfadePalette( ledPurple, ledGold, ledPurple);
+CRGBPalette256 crossfadePalette( ledPurple, ledGold, ledPurple); //palette for crossfade
 
 const long interval = 500; //interval for alternating colors
 
@@ -34,11 +33,6 @@ uint8_t gCurrentPatternNumber = 0; // Index number of which pattern is current
 void loop() {
   // Call function according to the current index of the pattern array
   gPatterns[gCurrentPatternNumber]();
-
-  // send the 'leds' array out to the actual LED strip
-  //FastLED.show();  
-  // insert a delay to keep the framerate modest
-  //FastLED.delay(1000/FRAMES_PER_SECOND); 
 
   EVERY_N_SECONDS( SECONDS_PER_PATTERN ) { nextPattern(); } // change patterns periodically
 }
@@ -107,6 +101,7 @@ void chase() {
 }
 
 void crossfade() {
+  //fade from purple to gold and back to purple across entire strip
   for(int fadeIndex = 0; fadeIndex < 255; fadeIndex++) {
     fill_solid( leds, NUM_LEDS, crossfadePalette[fadeIndex] );
     FastLED.show();

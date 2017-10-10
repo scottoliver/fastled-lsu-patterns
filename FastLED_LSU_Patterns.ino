@@ -9,6 +9,7 @@
 CRGB leds[NUM_LEDS]; //create LED array
 CRGB ledPurple = CRGB::Indigo; //assign purple LED color
 CRGB ledGold = CRGB::Yellow; //assign gold LED color
+CRGBPalette256 crossfadePalette( ledPurple, ledGold, ledPurple);
 
 const long interval = 500; //interval for alternating colors
 
@@ -26,7 +27,7 @@ void setup() {
 
 // List of patterns to cycle through.  Each is defined as a separate function below.
 typedef void (*SimplePatternList[])();
-SimplePatternList gPatterns = { alternating, chase };
+SimplePatternList gPatterns = { alternating, chase, crossfade };
 
 uint8_t gCurrentPatternNumber = 0; // Index number of which pattern is current
 
@@ -35,7 +36,7 @@ void loop() {
   gPatterns[gCurrentPatternNumber]();
 
   // send the 'leds' array out to the actual LED strip
-  FastLED.show();  
+  //FastLED.show();  
   // insert a delay to keep the framerate modest
   //FastLED.delay(1000/FRAMES_PER_SECOND); 
 
@@ -81,6 +82,7 @@ void alternating() {
       }
     }
   }
+  FastLED.show();
 }
 
 void chase() {
@@ -103,3 +105,12 @@ void chase() {
       purple = true;
   }
 }
+
+void crossfade() {
+  for(int fadeIndex = 0; fadeIndex < 255; fadeIndex++) {
+    fill_solid( leds, NUM_LEDS, crossfadePalette[fadeIndex] );
+    FastLED.show();
+    FastLED.delay(30);
+  }
+}
+

@@ -14,7 +14,7 @@ const long interval = 500; //interval for alternating colors
 
 unsigned long previousMillis = 0; //milliseconds since last call
 
-boolean purple = false; //purple or gold
+boolean purple = false; //false = gold, currently used in chase()
 
 
 void setup() {
@@ -24,6 +24,7 @@ void setup() {
   FastLED.setBrightness(BRIGHTNESS);
 }
 
+// FastLED pattern to cycle through different animations
 // List of patterns to cycle through.  Each is defined as a separate function below.
 typedef void (*SimplePatternList[])();
 SimplePatternList gPatterns = { alternating, chase, crossfade };
@@ -37,6 +38,7 @@ void loop() {
   EVERY_N_SECONDS( SECONDS_PER_PATTERN ) { nextPattern(); } // change patterns periodically
 }
 
+// additional code for FastLED pattern to cycle through animations
 #define ARRAY_SIZE(A) (sizeof(A) / sizeof((A)[0]))
 
 void nextPattern()
@@ -50,29 +52,30 @@ void alternating() {
 
   unsigned long currentMillis = millis(); //current milliseconds
 
-  CRGB evenLeds;
-  CRGB oddLeds;
+  CRGB evenLeds; //variable to set color of even LEDs
+  CRGB oddLeds; //variable to set color of odd LEDs
 
   //test if time to alternate lights, if so switch colors
   if (currentMillis - previousMillis >= interval) { 
 
-    previousMillis = currentMillis;
-
-    if(leds[0] == ledPurple) {
+    previousMillis = currentMillis; //retain milliseconds to test for next time to switch
+    
+    //test first LED for color
+    if(leds[0] == ledPurple) { //if first LED is purple, switch even LEDs to gold and odd LEDs to purple
       evenLeds = ledGold;
       oddLeds = ledPurple;
     }
-    else{
+    else{ //first run or if first LED is gold, make even LEDs purple and odd LEDs gold
       evenLeds = ledPurple;
       oddLeds = ledGold;
     }
 
     for(int dot = 0; dot < NUM_LEDS; dot++) {
-      if((dot % 2) == 0) { 
-        leds[dot] = evenLeds;
+      if((dot % 2) == 0) {    //modulus of 0 indicates even LEDs
+        leds[dot] = evenLeds; //set color designated for even LEDs
       }
       else {
-        leds[dot] = oddLeds;
+        leds[dot] = oddLeds;  //set color for odd LEDs
       }
     }
   }
@@ -83,27 +86,27 @@ void chase() {
   //send color down the entire LED string animated, then the opposite color
   
   for(int dot = 0; dot < NUM_LEDS; dot++) { 
-    if(purple){ //LEDs are currently purple
+    if(purple){   //LEDs are currently gold and should be changed to purple
       leds[dot] = ledPurple;
     }
-    else { //LEDs are currently gold or first run
+    else {        //LEDs are currently purple and should be changed to gold or first run
       leds[dot] = ledGold;
     }
     FastLED.show();
     FastLED.delay(30);
   }
   if(purple){
-      purple = false;
-    }
-    else{
-      purple = true;
+    purple = false; //gold next run
+  }
+  else{
+    purple = true; //purple next run
   }
 }
 
 void crossfade() {
   //fade from purple to gold and back to purple across entire strip
-  for(int fadeIndex = 0; fadeIndex < 255; fadeIndex++) {
-    fill_solid( leds, NUM_LEDS, crossfadePalette[fadeIndex] );
+  for(int fadeIndex = 0; fadeIndex < 255; fadeIndex++) { //step through all iterations of color palette
+    fill_solid( leds, NUM_LEDS, crossfadePalette[fadeIndex] ); //set all LEDs to current step in palette
     FastLED.show();
     FastLED.delay(30);
   }

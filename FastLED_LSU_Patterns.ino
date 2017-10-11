@@ -1,14 +1,14 @@
 //FastLED-LSU-Patterns - LSU-colored patterns for NeoPixel-style (3-pin) LED strips
 
 #include <FastLED.h> //FastLED Library required
-#define NUM_LEDS 60 //number of LEDs
+#define NUM_LEDS 300 //number of LEDs
 #define DATA_PIN 6 //Arduino pin for data line
 #define BRIGHTNESS 96 //brightness
-#define SECONDS_PER_PATTERN 10 //number of seconds before changing pattern
+#define SECONDS_PER_PATTERN 20 //number of seconds before changing pattern
 CRGB leds[NUM_LEDS]; //create LED array
 CRGB ledPurple = CRGB::Indigo; //assign purple LED color
 CRGB ledGold = CRGB::Yellow; //assign gold LED color
-CRGBPalette256 crossfadePalette( ledPurple, ledGold, ledPurple); //palette for crossfade
+CRGBPalette256 crossfadePalette( ledGold, ledPurple, ledGold, ledPurple); //palette for crossfade
 
 const long interval = 500; //interval for alternating colors
 
@@ -19,32 +19,48 @@ boolean purple = false; //false = gold, currently used in chase()
 
 void setup() {
   // put your setup code here, to run once:
-  FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS); 
+  FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip); 
+  fill_solid( leds, NUM_LEDS, CRGB::Black );
   // set master brightness
   FastLED.setBrightness(BRIGHTNESS);
 }
 
-// FastLED pattern to cycle through different animations
-// List of patterns to cycle through.  Each is defined as a separate function below.
-typedef void (*SimplePatternList[])();
-SimplePatternList gPatterns = { alternating, chase, crossfade };
+//Modified FastLED cycling structure. Adapted from https://gist.github.com/kriegsman/536dd5f2238413cf0ee2
+typedef void (*ArgumentPattern)(CRGB arg);
+typedef struct { 
+  ArgumentPattern mPattern;
+  CRGB mArg;
+} ArgumentPatternWithArgumentValues;
+
+ArgumentPatternWithArgumentValues gPatternsAndArguments[] = {
+  {alternating},
+
+  {solid, ledGold},
+  
+  {chase},
+  
+  {crossfade},
+  
+  {solid, ledPurple}
+};
 
 uint8_t gCurrentPatternNumber = 0; // Index number of which pattern is current
 
 void loop() {
-  // Call function according to the current index of the pattern array
-  gPatterns[gCurrentPatternNumber]();
+  // Call the current pattern function once, updating the 'leds' array
+  CRGB arg = gPatternsAndArguments[ gCurrentPatternNumber ].mArg;
+  ArgumentPattern pat = gPatternsAndArguments[ gCurrentPatternNumber ].mPattern;
+
+  pat(arg);
 
   EVERY_N_SECONDS( SECONDS_PER_PATTERN ) { nextPattern(); } // change patterns periodically
 }
 
-// additional code for FastLED pattern to cycle through animations
-#define ARRAY_SIZE(A) (sizeof(A) / sizeof((A)[0]))
-
 void nextPattern()
 {
   // add one to the current pattern number, and wrap around at the end
-  gCurrentPatternNumber = (gCurrentPatternNumber + 1) % ARRAY_SIZE( gPatterns);
+  const int numberOfPatterns = sizeof(gPatternsAndArguments) / sizeof( gPatternsAndArguments[0]);  
+  gCurrentPatternNumber = (gCurrentPatternNumber+1) % numberOfPatterns;
 }
 
 void alternating() {
@@ -86,7 +102,7 @@ void chase() {
   //send color down the entire LED string animated, then the opposite color
   
   for(int dot = 0; dot < NUM_LEDS; dot++) { 
-    if(purple){   //LEDs are currently gold and should be changed to purple
+    if(!purple){   //LEDs are currently gold and should be changed to purple
       leds[dot] = ledPurple;
     }
     else {        //LEDs are currently purple and should be changed to gold or first run
@@ -105,10 +121,28 @@ void chase() {
 
 void crossfade() {
   //fade from purple to gold and back to purple across entire strip
-  for(int fadeIndex = 0; fadeIndex < 255; fadeIndex++) { //step through all iterations of color palette
+  int paletteSteps = 255;
+  for(int fadeIndex = 0; fadeIndex < paletteSteps; fadeIndex++) { //step through all iterations of color palette
     fill_solid( leds, NUM_LEDS, crossfadePalette[fadeIndex] ); //set all LEDs to current step in palette
     FastLED.show();
-    FastLED.delay(30);
+    FastLED.delay(100);
+  }
+}
+
+void solid( CRGB color ) {
+  fill_solid( leds, NUM_LEDS, color ); //set LED color
+  int fadeAmount = -1;
+  int localbrightness = BRIGHTNESS;
+  FastLED.setBrightness(localbrightness); //set brightness to 0
+  FastLED.show();
+  for(int fadeIndex = 0; fadeIndex < (BRIGHTNESS * 2); fadeIndex++){
+    localbrightness = localbrightness + fadeAmount;
+    FastLED.setBrightness(localbrightness);
+    FastLED.show();
+    if(localbrightness == 0 || localbrightness == BRIGHTNESS){
+      fadeAmount = -fadeAmount;
+    }
+    FastLED.delay(20);
   }
 }
 

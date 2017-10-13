@@ -9,12 +9,10 @@ CRGB leds[NUM_LEDS]; //create LED array
 CRGB ledPurple = CRGB::Indigo; //assign purple LED color
 CRGB ledGold = CRGB::Yellow; //assign gold LED color
 CRGBPalette256 crossfadePalette( ledGold, ledPurple, ledGold, ledPurple); //palette for crossfade
-
 const long interval = 500; //interval for alternating colors
-
 unsigned long previousMillis = 0; //milliseconds since last call
-
 boolean purple = false; //false = gold, currently used in chase()
+int colorChoice = 0; //switch between purple and gold in wave()
 
 
 void setup() {
@@ -33,6 +31,10 @@ typedef struct {
 } ArgumentPatternWithArgumentValues;
 
 ArgumentPatternWithArgumentValues gPatternsAndArguments[] = {
+  {wave},
+  
+  {confetti},
+  
   {alternating},
 
   {solid, ledGold},
@@ -146,3 +148,30 @@ void solid( CRGB color ) {
   }
 }
 
+void confetti() 
+{
+  // random colored speckles that blink in and fade smoothly, based on DemoReel100
+  fadeToBlackBy( leds, NUM_LEDS, 10);
+  int pos = random16(NUM_LEDS);
+  leds[pos] += ledPurple;
+  pos = random16(NUM_LEDS);
+  leds[pos] += ledGold;
+  FastLED.show();
+  FastLED.delay(10);
+}
+
+void wave() {
+  CRGB color[2] = {ledPurple, ledGold};
+  fadeToBlackBy( leds, NUM_LEDS, 20);
+  uint16_t pos = beatsin16(9,0,NUM_LEDS-1);
+  leds[pos] += color[colorChoice];
+  if(pos == (NUM_LEDS-1)) { 
+    if(colorChoice == 0) {
+      colorChoice = 1;
+    }
+    else{
+      colorChoice = 0;
+    }
+  }
+  FastLED.show();
+}

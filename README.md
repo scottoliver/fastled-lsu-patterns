@@ -8,3 +8,7 @@ Purple or gold is displayed down the entire LED strip animated from beginning to
 Fades from purple to gold and back to purple across the entire LED strip
 ## Solid
 Fades a color provided as an argument from on to off and back on
+## Confetti
+Based on confetti in DemoReel100, blinks pixels on and fades off.
+## Wave
+Runs a sine wave up and down the strip, changing the color when the wave reaches the far end of the strip
